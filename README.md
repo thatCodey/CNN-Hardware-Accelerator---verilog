@@ -1,2 +1,0 @@
-# CNN-Hardware-Accelerator---verilog
-
