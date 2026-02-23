@@ -1,5 +1,5 @@
 // ============================================================================
-// File: cnn_top.v (UPDATED - Internal Image BRAM Version)
+// File: cnn_top.v (Internal BRAM + Proper Weight Addressing)
 // ============================================================================
 
 module cnn_top (
@@ -56,24 +56,18 @@ module cnn_top (
                   4'b0000;
 
     // ============================================================
-    // Internal Image BRAM Instance
+    // Internal Image BRAM
     // ============================================================
     image_bram u_img (
         .clk(clk),
-
-        // Write port (future AXI loading)
         .we(img_we),
         .write_addr(img_wr_addr),
         .write_data(img_wr_data),
-
-        // Read port (CNN streaming)
         .read_addr(img_rd_addr),
         .read_data(img_pixel)
     );
 
-    // ============================================================
-    // Disable write path for now (safe default)
-    // ============================================================
+    // Disable write path for now
     always @(posedge clk) begin
         if (rst) begin
             img_we      <= 1'b0;
@@ -85,7 +79,7 @@ module cnn_top (
     end
 
     // ============================================================
-    // ADDRESS LOGIC (Feeds internal BRAM)
+    // Image Read Address Generation
     // ============================================================
     always @(posedge clk) begin
         if (rst)
@@ -116,10 +110,13 @@ module cnn_top (
     );
 
     // ============================================================
-    // Convolution Weight ROM
+    // Convolution Weight ROM (Proper Addressing)
     // ============================================================
     wire signed [7:0] conv_weight;
-    reg  [6:0] conv_weight_addr;
+    wire [3:0] mac_step;
+    wire [6:0] conv_weight_addr;
+
+    assign conv_weight_addr = mac_step;  // MAC step drives ROM address
 
     conv_weight_rom u_conv_rom (
         .clk(clk),
@@ -145,7 +142,8 @@ module cnn_top (
         .p20(p20), .p21(p21), .p22(p22),
         .weight_in(conv_weight),
         .bias(16'sd0),
-        .out(conv_out)
+        .out(conv_out),
+        .mac_step_out(mac_step)
     );
 
     // ============================================================
@@ -217,7 +215,7 @@ module cnn_top (
     assign final_score = fc_out;
 
     // ============================================================
-    // Threshold (Final Classification)
+    // Threshold
     // ============================================================
     threshold #(
         .THRESHOLD(16'sd0)
