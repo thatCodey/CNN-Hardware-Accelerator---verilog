@@ -22,26 +22,29 @@ module conv3x3_single_ch (
     input  wire rst,
 
     // Control
-    input  wire conv_en,      // From FSM
-    output reg  done,         // To FSM
+    input  wire conv_en,
+    output reg  done,
 
     // Data valid
     input  wire valid_in,
     output reg  valid_out,
 
-    // Pixel window (unsigned input pixels)
+    // Pixel window
     input  wire [7:0] p00, p01, p02,
     input  wire [7:0] p10, p11, p12,
     input  wire [7:0] p20, p21, p22,
 
-    // Weight input (one weight per cycle, from ROM)
+    // Weight input
     input  wire signed [7:0] weight_in,
 
     // Bias
     input  wire signed [15:0] bias,
 
     // Output
-    output reg  signed [15:0] out
+    output reg  signed [15:0] out,
+
+    // ADD THIS LINE
+    output wire [3:0] mac_step_out
 );
 
     // ------------------------------------------------------------
@@ -49,6 +52,7 @@ module conv3x3_single_ch (
     // ------------------------------------------------------------
     reg signed [23:0] acc;          // Accumulator
     reg [3:0]         mac_step;     // 0 to 8
+    assign mac_step_out = mac_step;
     reg               busy;
 
     // Selected pixel for current MAC step
